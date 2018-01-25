@@ -1,5 +1,5 @@
 ---
-# tasks file for devopsrob.jenkinsrestore
+# tasks file for devopsrob.jenkins-restore
 
 - name: Create jenkins user
   user:
@@ -18,13 +18,13 @@
     state: present
     validate: 'visudo -cf %s'
 
-- name: Download jenkins installer script
+- name: Get jenkins installer script
   template: 
     src: templates/jenkins_installer.j2
     dest: /root/jenkins_installer.sh
     mode: 0755
 
-- name: Install jenkins
+- name: Run jenkins installer script
   shell: ./jenkins_installer.sh
 
 - name: Download jenkins_backup from github
