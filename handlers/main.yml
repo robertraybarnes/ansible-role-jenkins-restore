@@ -1,2 +1,7 @@
 ---
-# handlers file for devopsrob.jenkins-restore
+# handlers file for devopsrob.jenkinsrestore
+
+- name: restart_jenkins
+  service:
+    name: jenkins
+    state: restarted

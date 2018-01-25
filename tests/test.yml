@@ -1,5 +1,10 @@
 ---
-- hosts: localhost
+- hosts: all
   remote_user: root
+  vars_prompt:
+    - name: "ansible_ssh_pass"
+      prompt: "Enter root password"
+      private: yes
+
   roles:
-    - devopsrob.jenkins-restore
+    - devopsrob.jenkinsrestore

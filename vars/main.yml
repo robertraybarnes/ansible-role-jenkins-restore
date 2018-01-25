@@ -1,2 +1,5 @@
 ---
-# vars file for devopsrob.jenkins-restore
+# vars file for devopsrob.jenkinsrestore
+
+repo_url: <Enter git repo url here>
+password: <Enter password here >

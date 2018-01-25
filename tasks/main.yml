@@ -1,2 +1,111 @@
 ---
-# tasks file for devopsrob.jenkins-restore
+# tasks file for devopsrob.jenkinsrestore
+
+- name: Create jenkins user
+  user:
+    name: jenkins
+    state: present
+    createhome: yes
+    generate_ssh_key: yes
+    update_password: on_create
+    password: "{{ password }}"
+
+- name: Add jenkins user to sudoers file
+  lineinfile:
+    path: /etc/sudoers
+    insertafter: "^root"
+    line: "jenkins ALL=(ALL)       NOPASSWD:ALL"
+    state: present
+    validate: 'visudo -cf %s'
+
+- name: Download jenkins installer script
+  template: 
+    src: templates/jenkins_installer.j2
+    dest: /root/jenkins_installer.sh
+    mode: 0755
+
+- name: Install jenkins
+  shell: ./jenkins_installer.sh
+
+- name: Download jenkins_backup from github
+  git:
+    repo: "{{  repo_url  }}"
+    dest: /var/lib/JenkinsBackup
+    clone: yes
+    accept_hostkey: yes
+    ssh_opts: "-o StrictHostKeyChecking=no"
+
+- name: Delete existing jenkins configuration
+  file:
+    path: /var/lib/jenkins
+    state: absent
+  
+- name: Rename back up configuration directory
+  shell: mv /var/lib/JenkinsBackup /var/lib/jenkins
+
+- name: Set owner and group of jenkins folder
+  file:
+    path: /var/lib/jenkins
+    state: directory
+    owner: jenkins
+    group: jenkins
+    mode: 0777
+    recurse: yes
+  notify: restart_jenkins
+
+- name: Install latest version of pip
+  yum:
+    name: python-pip
+    state: latest
+
+- name: Install slacker python module
+  pip:
+    name: slacker
+    state: present
+
+- name: Create Monitoring folder
+  file:
+    path: /root/monitoring/
+    state: directory
+    owner: root
+    group: root
+
+- name: Add monitoring script to jenkins
+  template:
+    src: templates/monitoring.j2
+    dest: /root/monitoring/monitoring.py
+    owner: root
+    group: root
+    mode: 0755
+    force: yes
+
+- name: Create monitoring.log file
+  file:
+    path: /var/log/monitoring.log
+    state: touch
+    owner: root
+    group: root
+    mode: 0777
+
+- name: Install crontab for monitoring script to run
+  cron:
+    name: monitoring
+    state: present
+    user: root
+    job: /usr/bin/python /root/monitoring/monitoring.py >> /var/log/monitoring.log
+
+- name: Add backup script to jenkins
+  template:
+    src: templates/jenkins2git_backup.j2
+    dest: /root/jenkins2git_backup.sh
+    mode: 0755
+    owner: root
+    group: root
+
+- name: Install crontab to run backup script daily
+  cron:
+    name: backup
+    hour: 23
+    job: /root/jenkins2git_backup.sh
+    state: present
+    user: root
